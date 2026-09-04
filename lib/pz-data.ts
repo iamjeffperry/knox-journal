@@ -1,4 +1,9 @@
-export type TraitOption = { name: string; type: "Positive" | "Negative" };
+export type TraitOption = {
+  name: string;
+  type: "Positive" | "Negative";
+  /** Character-creation point change: negative traits grant points; positive traits spend them. */
+  points: number;
+};
 
 export const OCCUPATIONS: Record<"41" | "42", string[]> = {
   "41": [
@@ -23,47 +28,60 @@ export const STARTING_LOCATIONS: Record<"41" | "42", string[]> = {
   ],
 };
 
-const BUILD_41_POSITIVE = [
-  "Adrenaline Junkie", "Amateur Mechanic", "Angler", "Athletic", "Baseball Player", "Brave",
-  "Brawler", "Cat's Eyes", "Dextrous", "Eagle Eyed", "Fast Healer", "Fast Learner", "Fast Reader",
-  "First Aider", "Fit", "Former Scout", "Gardener", "Graceful", "Gymnast", "Handy", "Herbalist",
-  "Hiker", "Hunter", "Inconspicuous", "Iron Gut", "Keen Cook", "Keen Hearing", "Light Eater",
-  "Low Thirst", "Lucky", "Nutritionist", "Organized", "Outdoorsy", "Resilient", "Runner", "Sewer",
-  "Speed Demon", "Stout", "Strong", "Thick Skinned", "Wakeful",
+type TraitPoints = readonly [name: string, points: number];
+
+const BUILD_41_POSITIVE: TraitPoints[] = [
+  ["Adrenaline Junkie", -8], ["Amateur Mechanic", -5], ["Angler", -4], ["Athletic", -10],
+  ["Baseball Player", -4], ["Brave", -4], ["Brawler", -6], ["Cat's Eyes", -2], ["Cook", -6],
+  ["Dextrous", -2], ["Eagle Eyed", -6], ["Fast Healer", -6], ["Fast Learner", -6],
+  ["Fast Reader", -2], ["First Aider", -4], ["Fit", -6], ["Former Scout", -6], ["Gardener", -4],
+  ["Graceful", -4], ["Gymnast", -5], ["Handy", -8], ["Herbalist", -6], ["Hiker", -6],
+  ["Hunter", -8], ["Inconspicuous", -4], ["Iron Gut", -3], ["Keen Hearing", -6],
+  ["Light Eater", -4], ["Low Thirst", -6], ["Lucky", -4], ["Nutritionist", -4], ["Organized", -6],
+  ["Outdoorsman", -2], ["Resilient", -4], ["Runner", -4], ["Sewer", -4], ["Speed Demon", -1],
+  ["Stout", -6], ["Strong", -10], ["Thick Skinned", -8], ["Wakeful", -2],
 ];
-const BUILD_41_NEGATIVE = [
-  "Agoraphobic", "All Thumbs", "Claustrophobic", "Clumsy", "Conspicuous", "Cowardly", "Deaf",
-  "Disorganized", "Fear of Blood", "Hard of Hearing", "Hearty Appetite", "High Thirst", "Illiterate",
-  "Obese", "Out of Shape", "Overweight", "Pacifist", "Prone to Illness", "Restless Sleeper",
-  "Short of Breath", "Short Sighted", "Sleepyhead", "Slow Healer", "Slow Learner", "Slow Reader",
-  "Smoker", "Sunday Driver", "Thin-skinned", "Underweight", "Unfit", "Unlucky", "Very Underweight",
-  "Weak", "Weak Stomach",
+const BUILD_41_NEGATIVE: TraitPoints[] = [
+  ["Agoraphobic", 4], ["All Thumbs", 2], ["Asthmatic", 5], ["Claustrophobic", 4], ["Clumsy", 2],
+  ["Conspicuous", 4], ["Cowardly", 2], ["Deaf", 12], ["Disorganized", 4], ["Fear of Blood", 5],
+  ["Feeble", 6], ["Hard of Hearing", 4], ["Hearty Appetite", 4], ["High Thirst", 6], ["Illiterate", 8],
+  ["Obese", 10], ["Out of Shape", 6], ["Overweight", 6], ["Pacifist", 4], ["Prone to Illness", 4],
+  ["Restless Sleeper", 6], ["Short Sighted", 2], ["Sleepyhead", 4], ["Slow Healer", 6],
+  ["Slow Learner", 6], ["Slow Reader", 2], ["Smoker", 4], ["Sunday Driver", 1], ["Thin-skinned", 8],
+  ["Underweight", 6], ["Unfit", 10], ["Unlucky", 4], ["Very Underweight", 10], ["Weak", 10],
+  ["Weak Stomach", 3],
 ];
-const BUILD_42_POSITIVE = [
-  "Adrenaline Junkie", "Angler", "Artisan", "Athletic", "Baseball Player", "Blacksmith Knowledge",
-  "Brave", "Brawler", "Cat's Eyes", "Crafty", "Dextrous", "Eagle Eyed", "Fast Healer", "Fast Learner",
-  "Fast Reader", "First Aider", "Fit", "Former Scout", "Gardener", "Graceful", "Gymnast", "Handy",
-  "Herbalist", "Hiker", "Hunter", "Inconspicuous", "Inventive", "Iron Gut", "Keen Cook", "Keen Hearing",
-  "Light Eater", "Low Thirst", "Mason", "Nutritionist", "Organized", "Outdoorsy", "Resilient", "Runner",
-  "Sewer", "Speed Demon", "Stout", "Strong", "Thick Skinned", "Vehicle Knowledge", "Wakeful", "Whittler",
-  "Wilderness Knowledge",
+const BUILD_42_POSITIVE: TraitPoints[] = [
+  ["Adrenaline Junkie", -4], ["Angler", -4], ["Artisan", -2], ["Athletic", -10],
+  ["Baseball Player", -4], ["Blacksmith Knowledge", -6], ["Brave", -4], ["Brawler", -6],
+  ["Cat's Eyes", -2], ["Crafty", -3], ["Dextrous", -2], ["Eagle Eyed", -4], ["Fast Healer", -6],
+  ["Fast Learner", -6], ["Fast Reader", -2], ["First Aider", -4], ["Fit", -6], ["Former Scout", -6],
+  ["Gardener", -2], ["Graceful", -4], ["Gymnast", -5], ["Handy", -8], ["Herbalist", -4],
+  ["Hiker", -6], ["Hunter", -8], ["Inconspicuous", -4], ["Inventive", -2], ["Iron Gut", -3],
+  ["Keen Cook", -3], ["Keen Hearing", -6], ["Light Eater", -2], ["Low Thirst", -2], ["Mason", -2],
+  ["Nutritionist", -2], ["Organized", -4], ["Outdoorsy", -2], ["Resilient", -4], ["Runner", -4],
+  ["Sewer", -4], ["Speed Demon", -1], ["Stout", -6], ["Strong", -10], ["Thick Skinned", -8],
+  ["Vehicle Knowledge", -3], ["Wakeful", -2], ["Whittler", -2], ["Wilderness Knowledge", -8],
 ];
-const BUILD_42_NEGATIVE = [
-  "Agoraphobic", "All Thumbs", "Claustrophobic", "Clumsy", "Conspicuous", "Cowardly", "Deaf",
-  "Disorganized", "Fast Metabolism", "Fear of Blood", "Hard of Hearing", "Hearty Appetite", "High Thirst",
-  "Illiterate", "Motion Sensitive", "Out of Shape", "Prone to Illness", "Puny", "Reluctant Fighter",
-  "Restless Sleeper", "Short of Breath", "Short Sighted", "Sleepyhead", "Slow Healer", "Slow Learner",
-  "Slow Metabolism", "Slow Reader", "Smoker", "Sunday Driver", "Thin-skinned", "Unfit", "Weak", "Weak Stomach",
+const BUILD_42_NEGATIVE: TraitPoints[] = [
+  ["Agoraphobic", 4], ["All Thumbs", 2], ["Claustrophobic", 4], ["Clumsy", 2], ["Conspicuous", 4],
+  ["Cowardly", 2], ["Deaf", 12], ["Disorganized", 6], ["Fast Metabolism", 2], ["Fear of Blood", 5],
+  ["Hard of Hearing", 4], ["Hearty Appetite", 4], ["High Thirst", 2], ["Illiterate", 8],
+  ["Motion Sensitive", 4], ["Out of Shape", 6], ["Prone to Illness", 4], ["Puny", 10],
+  ["Reluctant Fighter", 4], ["Restless Sleeper", 6], ["Short of Breath", 5], ["Short Sighted", 2],
+  ["Sleepyhead", 4], ["Slow Healer", 3], ["Slow Learner", 6], ["Slow Metabolism", 2],
+  ["Slow Reader", 2], ["Smoker", 3], ["Sunday Driver", 1], ["Thin-skinned", 8], ["Unfit", 10],
+  ["Weak", 6], ["Weak Stomach", 3],
 ];
 
 export const TRAITS: Record<"41" | "42", TraitOption[]> = {
   "41": [
-    ...BUILD_41_POSITIVE.map((name) => ({ name, type: "Positive" as const })),
-    ...BUILD_41_NEGATIVE.map((name) => ({ name, type: "Negative" as const })),
+    ...BUILD_41_POSITIVE.map(([name, points]) => ({ name, points, type: "Positive" as const })),
+    ...BUILD_41_NEGATIVE.map(([name, points]) => ({ name, points, type: "Negative" as const })),
   ],
   "42": [
-    ...BUILD_42_POSITIVE.map((name) => ({ name, type: "Positive" as const })),
-    ...BUILD_42_NEGATIVE.map((name) => ({ name, type: "Negative" as const })),
+    ...BUILD_42_POSITIVE.map(([name, points]) => ({ name, points, type: "Positive" as const })),
+    ...BUILD_42_NEGATIVE.map(([name, points]) => ({ name, points, type: "Negative" as const })),
   ],
 };
 
