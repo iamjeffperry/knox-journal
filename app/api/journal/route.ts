@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { sessions, survivors } from "@/db/schema";
 
@@ -77,6 +77,14 @@ export async function POST(request: Request) {
       const objective = clean(payload.objective);
       if (!objective) return Response.json({ error: "An objective is required." }, { status: 400 });
       await db.update(survivors).set({ currentObjective: objective, updatedAt: new Date().toISOString() }).where(eq(survivors.id, survivorId));
+      return Response.json({ ok: true });
+    }
+
+    if (payload.action === "delete-session") {
+      const sessionId = clean(payload.sessionId);
+      if (!sessionId) return Response.json({ error: "A journal entry is required." }, { status: 400 });
+      await db.delete(sessions).where(and(eq(sessions.id, sessionId), eq(sessions.survivorId, survivorId)));
+      await db.update(survivors).set({ updatedAt: new Date().toISOString() }).where(eq(survivors.id, survivorId));
       return Response.json({ ok: true });
     }
 

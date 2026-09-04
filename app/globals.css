@@ -144,6 +144,10 @@ button { cursor: pointer; }
 .nav-entry svg { width:1rem; height:1rem; }
 .survivor-entry { display:flex; width:100%; min-height:2.5rem; align-items:center; justify-content:space-between; gap:.5rem; border-radius:.4rem; padding:.55rem .7rem; text-align:left; font-size:.85rem; color:var(--sidebar-foreground); opacity:.7; }
 .survivor-entry:hover,.survivor-entry.selected { background:var(--sidebar-accent); opacity:1; }
+.status-mark { display:inline-flex; flex:none; align-items:center; gap:.28rem; border:1px solid transparent; border-radius:999px; padding:.2rem .42rem; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.62rem; font-weight:800; letter-spacing:.06em; line-height:1; text-transform:uppercase; }
+.status-mark svg { width:.82rem; height:.82rem; stroke-width:2.6; }
+.status-alive { border-color:#79b17d; background:#d9f3dc; color:#173f20; }
+.status-dead { border-color:#c06a63; background:#f4d5d1; color:#641d18; }
 .journal-panel,.stat-box { border:1px solid var(--border); background:var(--card); color:var(--card-foreground); box-shadow:0 1px 0 color-mix(in srgb,var(--foreground) 5%,transparent); }
 .journal-panel { border-radius:.65rem; padding:1.15rem; }
 .stat-box { border-radius:.55rem; padding:.85rem; }
@@ -161,3 +165,8 @@ button { cursor: pointer; }
 .facts dd { font-size:.82rem; }
 .advisor-callout { display:flex; gap:.8rem; background:color-mix(in srgb,var(--primary) 7%,var(--card)); }
 @media (min-width:1024px) { .nav-entry { justify-content:flex-start; } }
+
+@media (prefers-color-scheme: dark) {
+  .status-alive { border-color:#57935f; background:#1d4626; color:#d7f6db; }
+  .status-dead { border-color:#a74f48; background:#56231f; color:#ffd9d5; }
+}
