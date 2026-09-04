@@ -5,9 +5,9 @@ Knox Journal is a Project Zomboid survivor diary. It remembers where a run left 
 ## Features
 
 - Create and switch between survivor journals
-- Select Build 41 or Build 42 occupations, starting locations, and traits with character-creation point totals
+- Select Build 41 or Build 42 occupations, starting locations, and game-ordered traits with character-creation point totals
 - Track condition, equipment, base, vehicle, supplies, and objectives
-- Log sessions and delete entries with confirmation
+- Log sessions and delete entries or entire characters with confirmation
 - Keep dead survivors alongside active runs
 - Ask GPT-5.6 Luna for a goal, survival tip, or session analysis
 - Save an Advisor recommendation as the next objective

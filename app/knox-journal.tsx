@@ -39,6 +39,8 @@ export default function KnoxJournal() {
   const [createTraits, setCreateTraits] = useState<string[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
   const [deletingId, setDeletingId] = useState("");
+  const [deleteSurvivorTarget, setDeleteSurvivorTarget] = useState<Survivor | null>(null);
+  const [deletingSurvivor, setDeletingSurvivor] = useState(false);
 
   const selected = survivors.find((survivor) => survivor.id === selectedId) ?? survivors[0];
   const selectedSessions = useMemo(() => sessions.filter((session) => session.survivorId === selected?.id), [sessions, selected?.id]);
@@ -48,7 +50,10 @@ export default function KnoxJournal() {
       const data = await hostedJournalStore.load();
       setSurvivors(data.survivors);
       setSessions(data.sessions);
-      setSelectedId((current) => preferredId ?? current ?? data.survivors[0]?.id ?? "");
+      setSelectedId((current) => {
+        const candidate = preferredId || current;
+        return data.survivors.some((survivor) => survivor.id === candidate) ? candidate : (data.survivors[0]?.id ?? "");
+      });
     } catch (error) { setMessage(error instanceof Error ? error.message : "The journal could not load."); }
     finally { setLoading(false); }
   }
@@ -93,6 +98,21 @@ export default function KnoxJournal() {
       setMessage(error instanceof Error ? error.message : "The entry could not be deleted.");
     } finally {
       setDeletingId("");
+    }
+  }
+
+  async function deleteSurvivor() {
+    if (!deleteSurvivorTarget) return;
+    const survivorId = deleteSurvivorTarget.id;
+    setDeleteSurvivorTarget(null);
+    setDeletingSurvivor(true);
+    try {
+      await hostedJournalStore.mutate({ action: "delete-survivor", survivorId });
+      await loadJournal();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "The character could not be deleted.");
+    } finally {
+      setDeletingSurvivor(false);
     }
   }
 
@@ -168,7 +188,7 @@ export default function KnoxJournal() {
           ) : <>
             <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-start">
               <div><div className="mb-2 flex items-center gap-2"><StatusMark status={selected.status} /><p className="font-mono text-xs tracking-[0.14em] text-primary">{selected.status === "alive" ? "ACTIVE SURVIVOR" : "RUN ENDED"}</p></div><h1 className="text-3xl font-semibold tracking-tight">{selected.name}</h1><p className="mt-1 text-sm text-muted-foreground">{selected.town} · {selected.occupation} · Build {selected.build} · {selected.gameMode}</p></div>
-              {selected.status === "alive" && <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => { setAdvice(null); setAdvisorOpen(true); }}><Sparkles /> Ask Knox Advisor</Button><Button onClick={() => setLogOpen(true)}><CirclePlus /> Log session</Button></div>}
+              <div className="flex flex-wrap gap-2">{selected.status === "alive" && <><Button variant="outline" onClick={() => { setAdvice(null); setAdvisorOpen(true); }}><Sparkles /> Ask Knox Advisor</Button><Button onClick={() => setLogOpen(true)}><CirclePlus /> Log session</Button></>}<Button variant="outline" className="text-destructive hover:text-destructive" disabled={deletingSurvivor} onClick={() => setDeleteSurvivorTarget(selected)}>{deletingSurvivor ? <LoaderCircle className="animate-spin" /> : <Trash2 />}Delete character</Button></div>
             </div>
             <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4"><Stat label="Survived" value={`Day ${selected.day}, ${selected.hours}h`} /><Stat label="Zombies killed" value={String(selected.kills)} /><Stat label="Condition" value={selected.condition} /><Stat label="Status" value={selected.status === "alive" ? "Still breathing" : "Deceased"} /></div>
             <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
@@ -192,6 +212,8 @@ export default function KnoxJournal() {
       <Dialog open={advisorOpen} onOpenChange={setAdvisorOpen}><DialogContent className="sm:max-w-xl"><DialogHeader><DialogTitle className="flex items-center gap-2"><Sparkles className="size-5 text-primary" />Ask Knox Advisor</DialogTitle><DialogDescription>Get one Project Zomboid goal based on this run—not generic survival advice.</DialogDescription></DialogHeader>{!advice ? <form onSubmit={askAdvisor} className="space-y-4"><SelectField label="What do you need?" value={requestType} onChange={setRequestType} options={["Suggest my next goal", "Give me a survival tip", "Analyze my last session", "Help me recover from a problem"]} /><div className="grid grid-cols-2 gap-3"><SelectField label="Available time" value={playtime} onChange={setPlaytime} options={["15 minutes", "30 minutes", "45 minutes", "1 hour", "Open-ended"]} /><SelectField label="Approach" value={risk} onChange={setRisk} options={["Safe and simple", "Moderate progress", "Risky but rewarding"]} /></div><TextField label="Anything else?" name="extra" placeholder="I want to find a car, but the parking lot is crowded." /><Button className="w-full" disabled={advisorLoading} type="submit">{advisorLoading ? <><LoaderCircle className="animate-spin" />Thinking through the run…</> : <><Sparkles />Ask Knox Advisor</>}</Button></form> : <div className="space-y-4"><div className="rounded-lg border border-primary/30 bg-primary/5 p-4"><div className="mb-2 flex items-center justify-between gap-3"><h3 className="font-semibold">{advice.title}</h3><Badge>{advice.risk} risk</Badge></div><p className="text-sm leading-6">{advice.recommendation}</p><p className="mt-2 text-sm leading-6 text-muted-foreground">{advice.reason}</p></div><ol className="space-y-2">{advice.steps.map((step, index) => <li key={`${index}-${step}`} className="flex gap-3 text-sm leading-6"><span className="font-mono text-primary">{String(index + 1).padStart(2, "0")}</span><span>{step}</span></li>)}</ol><div className="rounded-md bg-muted p-3 text-sm"><strong>Stop if:</strong> {advice.stop_condition}</div>{advice.uncertainty && <p className="text-xs text-muted-foreground">Version note: {advice.uncertainty}</p>}<div className="flex gap-2"><Button className="flex-1" onClick={useObjective}><Target />Use as objective</Button><Button variant="outline" onClick={() => setAdvice(null)}>Ask again</Button></div></div>}</DialogContent></Dialog>
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogMedia className="bg-destructive/10 text-destructive"><Trash2 /></AlertDialogMedia><AlertDialogTitle>Delete this journal entry?</AlertDialogTitle><AlertDialogDescription>{deleteTarget ? `Day ${deleteTarget.day}: ${deleteTarget.title} will be permanently removed.` : "This journal entry will be permanently removed."}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep entry</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={deleteSession}>Delete entry</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+
+      <AlertDialog open={Boolean(deleteSurvivorTarget)} onOpenChange={(open) => { if (!open) setDeleteSurvivorTarget(null); }}><AlertDialogContent><AlertDialogHeader><AlertDialogMedia className="bg-destructive/10 text-destructive"><Skull /></AlertDialogMedia><AlertDialogTitle>Delete this character?</AlertDialogTitle><AlertDialogDescription>{deleteSurvivorTarget ? `${deleteSurvivorTarget.name} and every journal entry attached to this character will be permanently removed.` : "This character and every attached journal entry will be permanently removed."}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep character</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={deleteSurvivor}>Delete character</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </main>
   );
 }

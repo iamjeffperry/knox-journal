@@ -46,6 +46,14 @@ export async function POST(request: Request) {
     const survivorId = clean(payload.survivorId);
     if (!survivorId) return Response.json({ error: "A survivor is required." }, { status: 400 });
 
+    if (payload.action === "delete-survivor") {
+      await db.batch([
+        db.delete(sessions).where(eq(sessions.survivorId, survivorId)),
+        db.delete(survivors).where(eq(survivors.id, survivorId)),
+      ]);
+      return Response.json({ ok: true });
+    }
+
     if (payload.action === "log-session") {
       const day = number(payload.day, 1);
       const summary = clean(payload.summary);

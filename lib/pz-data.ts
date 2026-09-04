@@ -78,12 +78,20 @@ export const TRAITS: Record<"41" | "42", TraitOption[]> = {
   "41": [
     ...BUILD_41_POSITIVE.map(([name, points]) => ({ name, points, type: "Positive" as const })),
     ...BUILD_41_NEGATIVE.map(([name, points]) => ({ name, points, type: "Negative" as const })),
-  ],
+  ].sort(compareTraitsLikeTheGame),
   "42": [
     ...BUILD_42_POSITIVE.map(([name, points]) => ({ name, points, type: "Positive" as const })),
     ...BUILD_42_NEGATIVE.map(([name, points]) => ({ name, points, type: "Negative" as const })),
-  ],
+  ].sort(compareTraitsLikeTheGame),
 };
+
+function compareTraitsLikeTheGame(a: TraitOption, b: TraitOption) {
+  const category = Number(a.type === "Negative") - Number(b.type === "Negative");
+  if (category !== 0) return category;
+
+  const pointValue = Math.abs(a.points) - Math.abs(b.points);
+  return pointValue || a.name.localeCompare(b.name);
+}
 
 export const CONDITIONS = ["Healthy", "Minor injuries", "Injured", "Severely injured", "Bitten", "Sick", "Exhausted", "Critical"];
 export const WEAPON_TYPES = ["Unarmed", "Axe", "Long Blunt", "Short Blunt", "Long Blade", "Short Blade", "Spear", "Firearm", "Improvised", "Other"];
