@@ -10,16 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Combobox, ComboboxChips, ComboboxChip, ComboboxChipsInput, ComboboxContent, ComboboxEmpty, ComboboxItem, ComboboxList, ComboboxValue, useComboboxAnchor } from "@/components/ui/combobox";
+import { Combobox, ComboboxChips, ComboboxChip, ComboboxChipsInput, ComboboxItem, ComboboxList, ComboboxValue } from "@/components/ui/combobox";
 import { CONDITIONS, OCCUPATIONS, STARTING_LOCATIONS, TRAITS, WEAPON_TYPES } from "@/lib/pz-data";
+import { hostedJournalStore, type Session, type Survivor } from "@/lib/journal-store";
 
-type Survivor = {
-  id: string; name: string; status: string; build: string; town: string; occupation: string;
-  traits: string; gameMode: string; day: number; hours: number; kills: number; condition: string;
-  base: string; vehicle: string; weapon: string; supplies: string; currentObjective: string;
-  runGoal: string; causeOfDeath: string | null; updatedAt: string;
-};
-type Session = { id: string; survivorId: string; day: number; title: string; summary: string; lesson: string; nextObjective: string; outcome: string; createdAt: string };
 type Advice = { title: string; recommendation: string; reason: string; steps: string[]; risk: "low" | "moderate" | "high"; stop_condition: string; uncertainty: string | null };
 
 type GameBuild = "41" | "42";
@@ -51,12 +45,10 @@ export default function KnoxJournal() {
 
   async function loadJournal(preferredId?: string) {
     try {
-      const response = await fetch("/api/journal", { cache: "no-store" });
-      const data = await response.json() as { survivors?: Survivor[]; sessions?: Session[]; error?: string };
-      if (!response.ok) throw new Error(data.error);
-      setSurvivors(data.survivors ?? []);
-      setSessions(data.sessions ?? []);
-      setSelectedId((current) => preferredId ?? current ?? data.survivors?.[0]?.id ?? "");
+      const data = await hostedJournalStore.load();
+      setSurvivors(data.survivors);
+      setSessions(data.sessions);
+      setSelectedId((current) => preferredId ?? current ?? data.survivors[0]?.id ?? "");
     } catch (error) { setMessage(error instanceof Error ? error.message : "The journal could not load."); }
     finally { setLoading(false); }
   }
@@ -66,9 +58,7 @@ export default function KnoxJournal() {
   useEffect(() => { void loadJournal(); }, []);
 
   async function sendJournalAction(payload: Record<string, unknown>) {
-    const response = await fetch("/api/journal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    const data = await response.json() as { survivor?: Survivor; error?: string };
-    if (!response.ok) throw new Error(data.error ?? "That could not be saved.");
+    const data = await hostedJournalStore.mutate(payload);
     await loadJournal(data.survivor?.id ?? selected?.id);
   }
 
@@ -215,10 +205,9 @@ function TextField({ label, name, ...props }: { label: string; name: string } & 
 function NativeChoice({ label, name, options }: { label: string; name: string; options: string[] }) { return <div className="space-y-2"><Label htmlFor={name}>{label}</Label><select id={name} name={name} className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm">{options.map((option) => <option key={option}>{option}</option>)}</select></div>; }
 function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: string[] }) { return <div className="space-y-2"><Label>{label}</Label><Select value={value} onValueChange={onChange}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger><SelectContent>{options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>; }
 function TraitPicker({ build, value, onChange }: { build: GameBuild; value: string[]; onChange: (value: string[]) => void }) {
-  const anchor = useComboboxAnchor();
   const options = TRAITS[build];
   const names = options.map((trait) => trait.name);
   const types = new Map(options.map((trait) => [trait.name, trait.type]));
-  return <div className="space-y-2"><Label>Traits</Label><Combobox items={names} multiple value={value} onValueChange={onChange}><ComboboxChips ref={anchor}><ComboboxValue>{(selected: string[]) => <>{selected.map((trait) => <ComboboxChip key={trait}>{trait}</ComboboxChip>)}<ComboboxChipsInput placeholder={selected.length ? "Add another trait…" : "Search and select traits…"} /></>}</ComboboxValue></ComboboxChips><ComboboxContent anchor={anchor}><ComboboxEmpty>No matching trait.</ComboboxEmpty><ComboboxList>{(trait: string) => <ComboboxItem key={trait} value={trait}><span className="flex-1">{trait}</span><Badge variant={types.get(trait) === "Positive" ? "secondary" : "outline"}>{types.get(trait)}</Badge></ComboboxItem>}</ComboboxList></ComboboxContent></Combobox></div>;
+  return <div className="space-y-2"><div className="flex items-center justify-between gap-3"><Label>Traits</Label><span className="text-xs text-muted-foreground">{value.length} selected</span></div><Combobox items={names} multiple value={value} onValueChange={onChange} inline open><ComboboxChips><ComboboxValue>{(selected: string[]) => <>{selected.map((trait) => <ComboboxChip key={trait}>{trait}</ComboboxChip>)}<ComboboxChipsInput placeholder={selected.length ? "Search for another trait…" : "Search traits…"} /></>}</ComboboxValue></ComboboxChips><div className="mt-2 rounded-md border border-input bg-background/40"><ComboboxList className="max-h-56 overscroll-contain scroll-py-1 overflow-y-auto p-1 touch-pan-y">{(trait: string) => <ComboboxItem key={trait} value={trait}><span className="flex-1">{trait}</span><Badge variant={types.get(trait) === "Positive" ? "secondary" : "outline"}>{types.get(trait)}</Badge></ComboboxItem>}</ComboboxList></div></Combobox></div>;
 }
 function prioritizeOption(options: string[], current: string) { return current && !options.includes(current) ? [current, ...options] : current ? [current, ...options.filter((option) => option !== current)] : options; }
